@@ -140,9 +140,12 @@ const WebSocketRequestBody = Schema.Union([
   tagRequestBody(WS_METHODS.terminalClose, TerminalCloseInput),
 
   // Filesystem
-  tagRequestBody(WS_METHODS.filesystemBrowse, Schema.Struct({
-    partialPath: Schema.String,
-  })),
+  tagRequestBody(
+    WS_METHODS.filesystemBrowse,
+    Schema.Struct({
+      partialPath: Schema.String,
+    }),
+  ),
 
   // Server meta
   tagRequestBody(WS_METHODS.serverGetConfig, Schema.Struct({})),

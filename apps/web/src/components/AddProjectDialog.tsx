@@ -175,7 +175,10 @@ export function AddProjectDialog({ open, onOpenChange, onAddProject }: AddProjec
             )}
           </CommandPanel>
           <CommandFooter>
-            <span>Tab to autocomplete &middot; Enter to drill down &middot; Enter on empty to add project</span>
+            <span>
+              Tab to autocomplete &middot; Enter to drill down &middot; Enter on empty to add
+              project
+            </span>
           </CommandFooter>
         </Command>
       </CommandDialogPopup>

@@ -873,9 +873,9 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
         const parentDir = endsWithSep ? expanded : path.dirname(expanded);
         const prefix = endsWithSep ? "" : path.basename(expanded);
 
-        const names = yield* fileSystem.readDirectory(parentDir).pipe(
-          Effect.catch(() => Effect.succeed([] as string[])),
-        );
+        const names = yield* fileSystem
+          .readDirectory(parentDir)
+          .pipe(Effect.catch(() => Effect.succeed([] as string[])));
 
         const showHidden = prefix.startsWith(".");
         const filtered = names
@@ -886,7 +886,9 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
           filtered,
           (name) =>
             fileSystem.stat(path.join(parentDir, name)).pipe(
-              Effect.map((s) => (s.type === "Directory" ? { name, fullPath: path.join(parentDir, name) } : null)),
+              Effect.map((s) =>
+                s.type === "Directory" ? { name, fullPath: path.join(parentDir, name) } : null,
+              ),
               Effect.catch(() => Effect.succeed(null)),
             ),
           { concurrency: 16 },
