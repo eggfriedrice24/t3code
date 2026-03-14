@@ -1,7 +1,7 @@
 import { DEFAULT_MODEL_BY_PROVIDER, type ResolvedKeybindingsConfig } from "@t3tools/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AddProjectDialog } from "../components/AddProjectDialog";
 import ThreadSidebar from "../components/Sidebar";
@@ -20,7 +20,7 @@ import { useStore } from "../store";
 
 const EMPTY_KEYBINDINGS: ResolvedKeybindingsConfig = [];
 
-function ChatRouteGlobalShortcuts() {
+function ChatRouteGlobalShortcuts({ onOpenAddProject }: { onOpenAddProject: () => void }) {
   const clearSelection = useThreadSelectionStore((state) => state.clearSelection);
   const selectedThreadIdsSize = useThreadSelectionStore((state) => state.selectedThreadIds.size);
   const { activeDraftThread, activeThread, handleNewThread, projects, routeThreadId } =
@@ -54,7 +54,7 @@ function ChatRouteGlobalShortcuts() {
       if (command === "project.addByPath") {
         event.preventDefault();
         event.stopPropagation();
-        window.dispatchEvent(new CustomEvent("t3:openAddProjectDialog"));
+        onOpenAddProject();
         return;
       }
 
@@ -92,6 +92,7 @@ function ChatRouteGlobalShortcuts() {
     clearSelection,
     handleNewThread,
     keybindings,
+    onOpenAddProject,
     projects,
     selectedThreadIdsSize,
     terminalOpen,
@@ -108,11 +109,7 @@ function ChatRouteLayout() {
   const projects = useStore((s) => s.projects);
   const { settings: appSettings } = useAppSettings();
 
-  useEffect(() => {
-    const handler = () => setAddProjectDialogOpen(true);
-    window.addEventListener("t3:openAddProjectDialog", handler);
-    return () => window.removeEventListener("t3:openAddProjectDialog", handler);
-  }, []);
+  const openAddProjectDialog = () => setAddProjectDialogOpen(true);
 
   useEffect(() => {
     const onMenuAction = window.desktopBridge?.onMenuAction;
@@ -130,37 +127,34 @@ function ChatRouteLayout() {
     };
   }, [navigate]);
 
-  const handleAddProject = useCallback(
-    async (cwd: string) => {
-      const api = readNativeApi();
-      if (!api) return;
+  const handleAddProject = async (cwd: string) => {
+    const api = readNativeApi();
+    if (!api) return;
 
-      const existing = projects.find((p) => p.cwd === cwd);
-      if (existing) return;
+    const existing = projects.find((p) => p.cwd === cwd);
+    if (existing) return;
 
-      const projectId = newProjectId();
-      const createdAt = new Date().toISOString();
-      const segments = cwd.split(/[/\\]/).filter(Boolean);
-      const title = segments[segments.length - 1] ?? cwd;
-      await api.orchestration.dispatchCommand({
-        type: "project.create",
-        commandId: newCommandId(),
-        projectId,
-        title,
-        workspaceRoot: cwd,
-        defaultModel: DEFAULT_MODEL_BY_PROVIDER.codex,
-        createdAt,
-      });
-      await handleNewThread(projectId, {
-        envMode: appSettings.defaultThreadEnvMode,
-      }).catch(() => undefined);
-    },
-    [handleNewThread, projects, appSettings.defaultThreadEnvMode],
-  );
+    const projectId = newProjectId();
+    const createdAt = new Date().toISOString();
+    const segments = cwd.split(/[/\\]/).filter(Boolean);
+    const title = segments[segments.length - 1] ?? cwd;
+    await api.orchestration.dispatchCommand({
+      type: "project.create",
+      commandId: newCommandId(),
+      projectId,
+      title,
+      workspaceRoot: cwd,
+      defaultModel: DEFAULT_MODEL_BY_PROVIDER.codex,
+      createdAt,
+    });
+    await handleNewThread(projectId, {
+      envMode: appSettings.defaultThreadEnvMode,
+    }).catch(() => undefined);
+  };
 
   return (
     <SidebarProvider defaultOpen>
-      <ChatRouteGlobalShortcuts />
+      <ChatRouteGlobalShortcuts onOpenAddProject={openAddProjectDialog} />
       <Sidebar
         side="left"
         collapsible="offcanvas"

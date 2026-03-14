@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "@tanstack/react-pacer";
 import { useQuery } from "@tanstack/react-query";
 import { FolderIcon } from "lucide-react";
@@ -47,31 +47,25 @@ export function AddProjectDialog({ open, onOpenChange, onAddProject }: AddProjec
     setHighlightedIndex(0);
   }, [entries]);
 
-  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const close = () => onOpenChange(false);
 
-  const handleOpenChange = useCallback(
-    (next: boolean) => {
-      if (!next) {
-        setInputValue("");
-        setHighlightedIndex(0);
-      }
-      onOpenChange(next);
-    },
-    [onOpenChange],
-  );
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setInputValue("");
+      setHighlightedIndex(0);
+    }
+    onOpenChange(next);
+  };
 
-  const addProject = useCallback(
-    (path: string) => {
-      onAddProject(path);
-      close();
-    },
-    [onAddProject, close],
-  );
+  const addProject = (path: string) => {
+    onAddProject(path);
+    close();
+  };
 
-  const drillInto = useCallback((entry: BrowseEntry) => {
+  const drillInto = (entry: BrowseEntry) => {
     setInputValue(entry.fullPath + "/");
     inputRef.current?.focus();
-  }, []);
+  };
 
   const getHighlightedEntry = () =>
     entries.length > 0 ? entries[Math.min(highlightedIndex, entries.length - 1)] : null;
