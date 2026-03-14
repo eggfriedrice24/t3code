@@ -96,7 +96,8 @@ export function AddProjectDialog({ open, onOpenChange, onAddProject }: AddProjec
           const idx = Math.min(highlightedIndex, entries.length - 1);
           const entry = entries[idx];
           if (entry) {
-            selectEntry(entry);
+            onAddProject(entry.fullPath);
+            onOpenChange(false);
           }
         } else if (inputValue.trim()) {
           onAddProject(inputValue.trim());
@@ -175,10 +176,7 @@ export function AddProjectDialog({ open, onOpenChange, onAddProject }: AddProjec
             )}
           </CommandPanel>
           <CommandFooter>
-            <span>
-              Tab to autocomplete &middot; Enter to drill down &middot; Enter on empty to add
-              project
-            </span>
+            <span>Tab to autocomplete &middot; Enter to add project</span>
           </CommandFooter>
         </Command>
       </CommandDialogPopup>
