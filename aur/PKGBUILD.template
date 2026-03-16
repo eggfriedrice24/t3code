@@ -1,0 +1,80 @@
+# Maintainer: T3 Tools <oss@t3.tools>
+
+pkgname=t3code-bin
+pkgver=__PKGVER__
+pkgrel=1
+pkgdesc='A minimal web GUI for coding agents'
+arch=('x86_64')
+url='https://github.com/pingdotgg/t3code'
+license=('MIT')
+depends=(
+    'alsa-lib'
+    'gtk3'
+    'hicolor-icon-theme'
+    'libnotify'
+    'libsecret'
+    'libxss'
+    'libxtst'
+    'nss'
+    'xdg-utils'
+)
+optdepends=(
+    'libappindicator-gtk3: systray indicator support'
+)
+provides=('t3code')
+conflicts=('t3code')
+options=('!strip' '!debug')
+source=(
+    "${pkgname}-${pkgver}.AppImage::https://github.com/pingdotgg/t3code/releases/download/v${pkgver}/T3-Code-${pkgver}-x86_64.AppImage"
+    't3code-bin.sh'
+    't3code-bin.desktop'
+)
+sha256sums=(
+    '__SHA256SUM__'
+    'SKIP'
+    'SKIP'
+)
+noextract=("${pkgname}-${pkgver}.AppImage")
+
+prepare() {
+    chmod +x "${srcdir}/${pkgname}-${pkgver}.AppImage"
+    "${srcdir}/${pkgname}-${pkgver}.AppImage" --appimage-extract
+}
+
+package() {
+    install -d "${pkgdir}/opt/${pkgname}"
+    cp -r "${srcdir}/squashfs-root/"* "${pkgdir}/opt/${pkgname}/"
+
+    # Remove AppImage-specific files
+    rm -f "${pkgdir}/opt/${pkgname}/AppRun"
+    rm -f "${pkgdir}/opt/${pkgname}/"*.desktop
+    rm -f "${pkgdir}/opt/${pkgname}/.DirIcon"
+
+    # Fix permissions
+    find "${pkgdir}/opt/${pkgname}" -type d -exec chmod 755 {} +
+    find "${pkgdir}/opt/${pkgname}" -type f -exec chmod 644 {} +
+    chmod 755 "${pkgdir}/opt/${pkgname}/t3-code-desktop"
+    chmod 755 "${pkgdir}/opt/${pkgname}/chrome_crashpad_handler"
+    chmod 4755 "${pkgdir}/opt/${pkgname}/chrome-sandbox"
+
+    # Make shared libraries executable
+    find "${pkgdir}/opt/${pkgname}" -name '*.so' -exec chmod 755 {} +
+    find "${pkgdir}/opt/${pkgname}" -name '*.so.*' -exec chmod 755 {} +
+
+    # Launcher script
+    install -Dm755 "${srcdir}/t3code-bin.sh" "${pkgdir}/usr/bin/t3code"
+
+    # Desktop entry
+    install -Dm644 "${srcdir}/t3code-bin.desktop" \
+        "${pkgdir}/usr/share/applications/t3code.desktop"
+
+    # Icon
+    install -Dm644 "${pkgdir}/opt/${pkgname}/usr/share/icons/hicolor/1024x1024/apps/t3-code-desktop.png" \
+        "${pkgdir}/usr/share/icons/hicolor/1024x1024/apps/t3code.png"
+
+    # Licenses
+    install -Dm644 "${pkgdir}/opt/${pkgname}/LICENSE.electron.txt" \
+        "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.electron.txt"
+    install -Dm644 "${pkgdir}/opt/${pkgname}/LICENSES.chromium.html" \
+        "${pkgdir}/usr/share/licenses/${pkgname}/LICENSES.chromium.html"
+}
