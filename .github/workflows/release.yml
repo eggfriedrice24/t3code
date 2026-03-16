@@ -303,6 +303,53 @@ jobs:
             release-assets/latest*.yml
           fail_on_unmatched_files: true
 
+  publish_aur:
+    name: Publish AUR package
+    needs: [preflight, release]
+    if: needs.preflight.outputs.is_prerelease == 'false'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.preflight.outputs.ref }}
+
+      - name: Download Linux AppImage artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: desktop-linux-x64
+          path: release-assets
+
+      - name: Compute AppImage SHA256
+        id: checksum
+        run: |
+          appimage_file=$(ls release-assets/*.AppImage)
+          sha256=$(sha256sum "$appimage_file" | awk '{print $1}')
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          echo "AppImage SHA256: $sha256"
+
+      - name: Generate PKGBUILD
+        env:
+          PKGVER: ${{ needs.preflight.outputs.version }}
+          SHA256: ${{ steps.checksum.outputs.sha256 }}
+        run: |
+          sed -e "s/__PKGVER__/${PKGVER}/g" \
+              -e "s/__SHA256SUM__/${SHA256}/g" \
+              aur/PKGBUILD.template > aur/PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v4
+        with:
+          pkgname: t3code-bin
+          pkgbuild: aur/PKGBUILD
+          assets: |
+            aur/t3code-bin.sh
+            aur/t3code-bin.desktop
+          commit_username: github-actions[bot]
+          commit_email: 41898282+github-actions[bot]@users.noreply.github.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ needs.preflight.outputs.version }}"
+
   finalize:
     name: Finalize release
     needs: [preflight, release]
